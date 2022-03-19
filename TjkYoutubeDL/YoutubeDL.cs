@@ -43,6 +43,8 @@ namespace TjkYoutubeDL
 
         public string FFMpegPath { get; private set; }
 
+        private int maxThreadCount;
+
         public int ConnectTimeOut { get; set; } = 10;
 
         public string DownloadPath { get; set; }
@@ -73,6 +75,7 @@ namespace TjkYoutubeDL
             };
 
             EnableLog = false;
+            maxThreadCount = 1;
 
             processes = new List<Process>();
 
@@ -96,6 +99,11 @@ namespace TjkYoutubeDL
                 throw new BadPathException(path);
             }
             FFMpegPath = Path.GetFullPath(path);
+        }
+
+        public void SetMaxThreadCount(int count)
+        {
+            this.maxThreadCount = count;
         }
 
         public void CustomAsk(string fileName, string args, Func<string, bool> onDataAvailable, bool useErrorAsLog = false)
@@ -411,25 +419,45 @@ namespace TjkYoutubeDL
 
         private void ThreadDownloadAction()
         {
+            var threadList = new List<Thread>();
+
             while (true)
             {
-                DownloadItem current = null;
-
-                lock (queueDownloadLocker)
+                if (threadList.Count < maxThreadCount)
                 {
-                    if (downloadQueue.Count > 0)
+                    DownloadItem current = null;
+
+                    lock (queueDownloadLocker)
                     {
-                        current = downloadQueue.Dequeue();
+                        if (downloadQueue.Count > 0)
+                        {
+                            current = downloadQueue.Dequeue();
+                        }
+                    }
+
+                    if (current != null)
+                    {
+                        Thread thread = new Thread(() =>
+                        {
+                            Download(current);
+                        });
+                        threadList.Add(thread);
+                        thread.Start();
                     }
                 }
 
-                if (current != null)
+                if (threadList.Count > 0)
                 {
-                    Download(current);
+                    for (int i = threadList.Count - 1; i >= 0; i--)
+                    {
+                        if (threadList[i].IsAlive == false)
+                        {
+                            threadList.RemoveAt(i);
+                        }
+                    }
                 }
 
-
-                Thread.Sleep(50);
+                Thread.Sleep(100);
             }
         }
 
