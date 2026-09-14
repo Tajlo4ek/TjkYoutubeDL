@@ -286,9 +286,12 @@ namespace TjkYoutubeDL
 
                     if (progress.Length != 0 && speed.Length != 0)
                     {
-                        progress = progress.Substring(0, progress.Length - 1);
-                        speed = speed.Substring(3);
-                        time = time.Substring(3);
+                        try
+                        {
+                            progress = progress.Substring(0, progress.Length - 1);
+                            speed = speed.Substring(3);
+                            time = time.Substring(3);
+                        }catch (Exception) { }
 
                         downloadItem.Log(LogType.Download, new string[] { progress, speed, time });
                     }

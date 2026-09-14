@@ -56,7 +56,7 @@ namespace TjkYoutubeDL
 
                 foreach (var f in _availableVideoFormats)
                 {
-                    if (f.Height == null)
+                    if (f.Height == null && f.FormatNote.Contains("original"))
                     {
                         audioId = f.FomatId;
                         break;
